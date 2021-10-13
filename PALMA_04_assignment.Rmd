@@ -55,6 +55,11 @@ In the R code chunk, write this out to a dataset. (HINT: 1. start small! 2. you 
 
 ```{r}
 dbListFields(con_air, "flights")
+```
+
+
+```{r}
+dbListFields(con_air, "airports")
 
 ```
 
@@ -179,7 +184,7 @@ GROUP BY `carrier`
 
 ```{r}
 my_data %>% 
-  ggplot(aes(x = fct_reorder(avg_delay, median, .desc = TRUE),
+  ggplot(aes(x = fct_reorder(avg_delay, .desc = TRUE),
              y = carrier, fill = navy)) +
   geom_col() +
   labs(x = NULL,
@@ -196,21 +201,22 @@ dbDisconnect(con_air)
 
 ## Shiny app - _______
 
-If you are new to Shiny apps or it's been awhile since you've made one, visit the Shiny links on our course [Resource](https://advanced-ds-in-r.netlify.app/resources.html) page. 
+My App: https://ajp28117.shinyapps.io/KC-House-Price-Variable-Analysis/
 
-Check out my Shiny tips [here](https://github.com/llendway/shiny_tips). 
 
-Everyone should watch the [Theming Shiny](https://youtu.be/b9WWNO4P2nY) talk by Carson Sievert so you can make your app look amazing.
 
-**Tasks:**
 
-* Set up a separate project and GitHub repo for this app. The app needs to be created in a file called *exactly* app.R that is also in the project folder.  
 
-* At the top of the file, load any libraries and data you will use in the app.  
-* Use whatever data you'd like and create an app. It doesn't have to be super fancy, BUT it needs to incorporate all three of the new techniques I showed in the [Shiny tips](https://github.com/llendway/shiny_tips) - `reactive()`, referencing variable names, and updating a UI input with other UI input. 
-* Use the `bslib` to theme your shiny app!  
-* Publish your app to [shinyapps.io](https://www.shinyapps.io/). There are instructions for doing that on the tutorial I linked to above.   
-* Write a paragraph or two describing your app on your website! Link to the app and your GitHub repository in your post. Include a link to your post here. 
+(NEED TO ADD TO WEBSITE W POST)
+
+
+
+
+
+**Write a paragraph or two describing your app on your website! Link to the app and your GitHub repository in your post. Include a link to your post here.** 
+
+
+**My shiny app uses the KC house data and looks at a select group of quantitative variables and their distributions.  Interesting trends can be seen in these graphs, including showing some very skewed layouts...**
 
 
 ## Function Friday problems -- _______
