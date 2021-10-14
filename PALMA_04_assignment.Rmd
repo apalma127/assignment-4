@@ -19,14 +19,13 @@ library(mdsr)              # for accessing some databases - goes with Modern Dat
 library(RMySQL)            # for accessing MySQL databases
 library(RSQLite)           # for accessing SQLite databases
 library(dplyr)
-theme_set(theme_minimal()) # Lisa's favorite theme
 ```
 
 ## Put it on GitHub! - DONE        
 
 Github Link:  https://github.com/apalma127/assignment-4/tree/main
 
-## SQL - _____
+## SQL - DONE
 
 You will use the `airlines` data from the SQL database that I used in the example in the [tutorial](https://advanced-ds-in-r.netlify.app/posts/2021-03-29-sqlinr/). Be sure to include the chunk to connect to the database here. And, when you are finished, disconnect. You may need to reconnect throughout as it times out after a while.
 
@@ -67,6 +66,7 @@ dbListFields(con_air, "airports")
 ```{r}
 overall_smry <-
   tbl(con_air, "flights") %>%
+  filter(year == "2017") %>%
   group_by(origin, year, month) %>%
   summarize(num_flights = n(),
             num_destinations = n_distinct(dest),
@@ -74,6 +74,10 @@ overall_smry <-
             avg_flight_distance = mean(distance),
             prop_late_over20 = mean(arr_delay > 20))
 
+```
+
+```{r}
+overall_smry
 ```
 
 
@@ -86,13 +90,9 @@ show_query(overall_smry)
 
 
 ```{sql connection= con_air}
-SELECT `origin`, `year`, `month`, 
-  COUNT(*) AS `num_flights`, 
-  COUNT(DISTINCT `dest`) AS `num_destinations`,
-  AVG(`air_time`) AS `avg_flight_length`, 
-  AVG(`distance`) AS `avg_flight_distance`, 
-  AVG(`arr_delay` > 20.0) AS `prop_late_over20`
+SELECT `origin`, `year`, `month`, COUNT(*) AS `num_flights`, COUNT(DISTINCT `dest`) AS `num_destinations`, AVG(`air_time`) AS `avg_flight_length`, AVG(`distance`) AS `avg_flight_distance`, AVG(`arr_delay` > 20.0) AS `prop_late_over20`
 FROM `flights`
+WHERE (`year` = '2017')
 GROUP BY `origin`, `year`, `month`
 ```
 
@@ -100,72 +100,67 @@ GROUP BY `origin`, `year`, `month`
   - With the dataset you wrote out, create a graph that helps illustrate the "worst" airports in terms of late arrivals. You have some freedom in how you define worst and you may want to consider some of the other variables you computed. Do some theming to make your graph look glamorous (those of you who weren't in my intro data science class this year may want to watch Will Chase's [Glamour of Graphics](https://www.youtube.com/watch?v=h5cTacaWE6I) talk for inspiration). 
   
 ```{r}
-overall_smry_top10 <-  overall_smry %>%
-  group_by(origin) %>%
-  arrange(prop_late_over20, .by_group = TRUE) %>%
-  top_n(10)
+overall_smry_df <- overall_smry %>%
+                  collect()
 ```
 
 ```{r}
-overall_smry_top10
+overall_smry_df %>%
+  group_by(origin) %>% 
+  mutate(mean_prop_late = mean(prop_late_over20)) %>% 
+  slice(1) %>%
+  arrange(desc(mean_prop_late)) %>% 
+  ungroup() %>% 
+  ggplot(aes(y = mean_prop_late,
+             x = avg_flight_length)) +
+  geom_point(size= 1, color = "orange") +
+  geom_text(aes(label=origin), color = "navy", hjust=0, vjust=0, size=2.5)+
+  labs(y = "Average Percent of Late Flights",
+       x = "Average Length of Flight",
+       title = "Which Airports Have the Worst Percent of Flights Delayed Over 20 Mins?") +
+  theme_classic() +
+  theme(
+  panel.background = element_rect(fill = "lightblue"))
+
 ```
 
-  
-```{r}
-overall_smry %>% 
-  arrange(desc(prop_late_over20)) %>%
-    top_n(10) %>%
-  ggplot(aes(x = prop_late_over20,
-             y = fct_reorder(origin, prop_late_over20, .desc=TRUE, ))) +
-  geom_col(fill = "navy") +
-  scale_x_continuous(expand = c(0,0), 
-                     labels = scales::percent) +
-  labs(x = NULL,
-       y = NULL,
-       title = "Which airport had the largest % of flights that \nwere more than 20 minutes late from 2010-2017?") +
-  theme_minimal()
-```
-  
-```{r}
-overall_smry %>% 
-  head(100) %>% 
-  arrange(desc(prop_late_over20)) %>%
-  top_n(10)
-```
-
-```{r}
-flights_over20
-```
   
   
   - Although your graph was truly inspirational, you've been requested to "boil it down to a few numbers." Some people just don't appreciate all that effort you put in. And, you need to use the already summarized data that you already pulled in from SQL. Create a table with 6 or fewer rows and 3 or fewer columns that summarizes which airport is the "worst" in terms of late arrivals. Be careful with your calculations. You may consider using the `kable`, `kableExtra`, or `gt` packages to make your table look truly spectacular.
   
+```{r}
+overall_smry_top6 <-  overall_smry_df %>%
+  group_by(origin) %>%
+  mutate(mean_prop_late = mean(prop_late_over20)) %>% 
+  slice(1) %>%
+  arrange(desc(mean_prop_late)) %>% 
+  ungroup() %>% 
+  dplyr::select(origin, prop_late_over20, mean_prop_late) %>%
+  arrange(prop_late_over20, .by_group = TRUE) %>%
+  top_n(10) %>%
+  filter(row_number(desc(mean_prop_late)) <= 6) 
 
-```{sql connection= con_air}
-SELECT `origin`, `year`, `month`, 
-  COUNT(*) AS `num_flights`, 
-  COUNT(DISTINCT `dest`) AS `num_destinations`,
-  AVG(`air_time`) AS `avg_flight_length`, 
-  AVG(`distance`) AS `avg_flight_distance`, 
-  AVG(`arr_delay` > 20.0) AS `prop_late_over20`
-FROM `flights`
-GROUP BY `origin`, `year`, `month`
-ORDER BY `prop_late_over20` DESC
-LIMIT 3;
 ```
 
-  
+```{r}
+overall_smry_top6 %>%
+  kbl() %>%
+  kable_styling()
+```
+
+
   
 2. Come up with your own interesting question that data in the airlines database can help you answer. Write a SQL query and equivalent R code chunk to extract the data you need and create an elegant graph to help answer the question. Be sure to write down the question so it is clear. 
 
 
-**Question: how does the avg delay performance of airlines compare over the years?** 
+**Question: In 2017, which airlines perfromed the worst with delays over an hour?** 
 
 ```{r}
 my_data <-
   tbl(con_air, "flights") %>%
+  filter(year == "2017") %>%
   group_by(carrier) %>%
-  summarize(avg_delay = mean(arr_delay)) 
+  summarize(prop_late_over60 = mean(arr_delay > 60))
 
 ```
 
@@ -176,21 +171,30 @@ show_query(my_data)
 
 
 ```{sql connection= con_air}
-SELECT `carrier`, AVG(`arr_delay`) AS `avg_delay`
+SELECT `carrier`, AVG(`arr_delay` > 60.0) AS `prop_late_over60`
 FROM `flights`
+WHERE (`year` = '2017')
 GROUP BY `carrier`
 ```
 
 
 ```{r}
-my_data %>% 
-  ggplot(aes(x = fct_reorder(avg_delay, .desc = TRUE),
-             y = carrier, fill = navy)) +
-  geom_col() +
-  labs(x = NULL,
+my_data_df <- my_data %>%
+              collect()
+```
+
+
+```{r}
+my_data_df %>% 
+  ggplot(aes(y = fct_reorder(carrier, prop_late_over60),
+             x = prop_late_over60)) +
+  geom_col(fill = "navy", color = "orange") +
+  labs(x = "Prop of Flights Delayed over 60 mins",
        y = NULL,
-       title = "How does avg delay compare for carriers?") +
-  theme_minimal()
+       title = "How does avg delays of 60 mins or more compare for carriers?") +
+  theme_classic() +
+  theme(
+  panel.background = element_rect(fill = "lightblue"))
 ```
 
 
@@ -199,29 +203,14 @@ dbDisconnect(con_air)
 ```
 
 
-## Shiny app - _______
+## Shiny app - DONE
 
 My App: https://ajp28117.shinyapps.io/KC-House-Price-Variable-Analysis/
 
+Repo for App:  https://github.com/apalma127/shiny-app-stat456/blob/main/app.R
+
+Website Post:  https://anthonypalma.netlify.app/posts/shinyapps/
 
 
-
-
-(NEED TO ADD TO WEBSITE W POST)
-
-
-
-
-
-**Write a paragraph or two describing your app on your website! Link to the app and your GitHub repository in your post. Include a link to your post here.** 
-
-
-**My shiny app uses the KC house data and looks at a select group of quantitative variables and their distributions.  Interesting trends can be seen in these graphs, including showing some very skewed layouts...**
-
-
-## Function Friday problems -- _______
-
-
-REMEMBER TO ADD YOUR GITHUB LINK AT THE TOP OF THE PAGE AND UNCOMMENT THE `knitr` OPTIONS.
-
+## Function Friday problems -- other doc -- DONE
 
