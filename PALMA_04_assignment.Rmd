@@ -43,15 +43,6 @@ con_air <- dbConnect(RMySQL::MySQL(),
 
 1. Create a SQL chunk and an equivalent R code chunk that does the following: 
 
-for each airport (with its name, not code), year, and month 
-find the total number of departing flights, 
-the distinct destinations to which they flew, 
-the average length of the flight, 
-the average distance of the flight, 
-and the proportion of flights that arrived more than 20 minutes late. 
-
-In the R code chunk, write this out to a dataset. (HINT: 1. start small! 2. you may want to do the R part first and use it to "cheat" into the SQL code).  
-
 ```{r}
 dbListFields(con_air, "flights")
 ```
@@ -76,6 +67,7 @@ overall_smry <-
 
 ```
 
+
 ```{r}
 overall_smry
 ```
@@ -97,7 +89,7 @@ GROUP BY `origin`, `year`, `month`
 ```
 
 
-  - With the dataset you wrote out, create a graph that helps illustrate the "worst" airports in terms of late arrivals. You have some freedom in how you define worst and you may want to consider some of the other variables you computed. Do some theming to make your graph look glamorous (those of you who weren't in my intro data science class this year may want to watch Will Chase's [Glamour of Graphics](https://www.youtube.com/watch?v=h5cTacaWE6I) talk for inspiration). 
+  - With the dataset you wrote out, create a graph that helps illustrate the "worst" airports in terms of late arrivals. You have some freedom in how you define worst and you may want to consider some of the other variables you computed. Do some theming to make your graph look glamorous.
   
 ```{r}
 overall_smry_df <- overall_smry %>%
@@ -116,8 +108,8 @@ overall_smry_df %>%
   geom_point(size= 1, color = "orange") +
   geom_text(aes(label=origin), color = "navy", hjust=0, vjust=0, size=2.5)+
   labs(y = "Average Percent of Late Flights",
-       x = "Average Length of Flight",
-       title = "Which Airports Have the Worst Percent of Flights Delayed Over 20 Mins?") +
+       x = "Average Length of Flight (miles)",
+       title = "Which Airports Have the Worst Delays?") +
   theme_classic() +
   theme(
   panel.background = element_rect(fill = "lightblue"))
@@ -153,7 +145,8 @@ overall_smry_top6 %>%
 2. Come up with your own interesting question that data in the airlines database can help you answer. Write a SQL query and equivalent R code chunk to extract the data you need and create an elegant graph to help answer the question. Be sure to write down the question so it is clear. 
 
 
-**Question: In 2017, which airlines perfromed the worst with delays over an hour?** 
+**Question: In 2017, which airlines performed the worst with delays over an hour?** 
+
 
 ```{r}
 my_data <-
@@ -191,7 +184,7 @@ my_data_df %>%
   geom_col(fill = "navy", color = "orange") +
   labs(x = "Prop of Flights Delayed over 60 mins",
        y = NULL,
-       title = "How does avg delays of 60 mins or more compare for carriers?") +
+       title = "Which airlines had the worst proportion of delays over an hour (2017)?") +
   theme_classic() +
   theme(
   panel.background = element_rect(fill = "lightblue"))
